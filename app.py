@@ -4,9 +4,14 @@ from streamlit_mic_recorder import mic_recorder
 from gtts import gTTS
 import base64
 
-# --- MASTER API KEY CONFIGURATION ---
-# 1. Sabse pehle Streamlit Cloud ke Secrets se check karega
+# Code me asli key mat likhna! Sirf secrets se call karein
 GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", None)
+
+if not GOOGLE_API_KEY:
+    st.error("🚨 API Key nahi mili. Secrets check karein!")
+    st.stop()
+
+genai.configure(api_key=GOOGLE_API_KEY.strip())
 
 # 2. FALLBACK: Agar secrets kaam nahi kar raha, toh apni ASLI KEY niche dandi (quotes) me paste kar do!
 # GitHub par push karne se pehle apni key yahan daal kar test karo.
