@@ -4,24 +4,31 @@ from streamlit_mic_recorder import mic_recorder
 from gtts import gTTS
 import base64
 
-# --- API KEY MANAGEMENT ---
-# Sabse pehle secrets se key uthayenge
+# --- MASTER API KEY CONFIGURATION ---
+# 1. Sabse pehle Streamlit Cloud ke Secrets se check karega
 GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", None)
 
-# Agar secrets me nahi mili, toh check karenge local environment variable ya direct check
+# 2. FALLBACK: Agar secrets kaam nahi kar raha, toh apni ASLI KEY niche dandi (quotes) me paste kar do!
+# GitHub par push karne se pehle apni key yahan daal kar test karo.
 if not GOOGLE_API_KEY or GOOGLE_API_KEY == "YOUR_ACTUAL_API_KEY_HERE":
-    st.error("🚨 **Error:** Streamlit ko aapki Gemini API Key nahi mil rahi hai! Kripya niche diye gaye 'Step 2' ko dekhein.")
-    st.stop()  # Code ko aage badhne se rok dega taaki 400 error na aaye
-else:
-    # Agar key mil gayi toh configure karein
-    genai.configure(api_key=GOOGLE_API_KEY)
+    GOOGLE_API_KEY = "YAHAN_APNI_ASLI_GEMINI_KEY_PASTE_KARO" # <-- Apni AIzaSy... wali key yahan likhein
 
-# Stable model selection
-model = genai.GenerativeModel('gemini-1.5-flash')
-# Safe aur updated stable model use kar rahe hain
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Final validation check
+if GOOGLE_API_KEY == "YAHAN_APNI_ASLI_GEMINI_KEY_PASTE_KARO" or not GOOGLE_API_KEY:
+    st.error("🚨 **Key Missing:** Kripya code ke andar line 14 par apni asli Gemini API Key paste karein!")
+    st.stop()
 
-# 2. UI Setup (Matching "AI assistant motion by Robin Holesinsky on Muzli.jpg")
+# Ab clean tarike se configure karein bina kisi extra space ke
+try:
+    # .strip() lagane se agar koi extra space copy ho gayi hogi toh woh hat jayegi
+    genai.configure(api_key=GOOGLE_API_KEY.strip())
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.error(f"Configuration Error: {e}")
+    st.stop()
+
+
+# --- UI Setup (Matching "AI assistant motion by Robin Holesinsky on Muzli.jpg") ---
 st.set_page_config(page_title="AI Assistant", page_icon="🔮", layout="centered")
 
 st.markdown("""
@@ -47,7 +54,7 @@ st.markdown('<div class="orb-container"><div class="orb"></div></div>', unsafe_a
 st.markdown('<div class="title-text">Hello Robin</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-prompt">How can I help you today?</div>', unsafe_allow_html=True)
 
-# TTS Player
+# TTS Audio Player
 def speak(text):
     try:
         tts = gTTS(text=text, lang='en', slow=False)
@@ -60,46 +67,37 @@ def speak(text):
     except Exception as e:
         pass
 
-# Input Variables
+# Input Logic
 final_query = ""
 
-# Layout for Text & Voice Inputs separately
 user_query = st.text_input("Ask anything...", placeholder="Type your message here...", label_visibility="collapsed")
 
 st.write("---")
 st.write("Or use Voice Command:")
 audio_record = mic_recorder(start_prompt="🎙️ Record Voice", stop_prompt="🛑 Stop & Process", key='recorder')
 
-# Logic separation to avoid InvalidArgument error
 if user_query:
     final_query = user_query
 elif audio_record and 'bytes' in audio_record:
     with st.spinner("Processing your voice..."):
         try:
             audio_bytes = audio_record['bytes']
-            # Gemini ko correct format me audio dictionary de rahe hain
-            audio_data = {
-                "mime_type": "audio/wav",
-                "data": audio_bytes
-            }
-            # Audio ko directly text/reply me convert karne ka prompt
+            audio_data = {"mime_type": "audio/wav", "data": audio_bytes}
             response = model.generate_content([
-                "The user has spoken. Listen to this audio carefully and reply to whatever they asked or said directly in simple short text.", 
+                "The user has spoken. Reply directly to whatever they asked in short text.", 
                 audio_data
             ])
             final_query = response.text
             st.info(f"Voice Detected: {final_query}")
         except Exception as e:
-            st.error("Audio samajhne me dikkat hui. Kripya dobara koshish karein ya type karein.")
+            st.error("Audio processing failed. Please type instead.")
 
-# Response Generator
+# Execution and Response
 if final_query:
     with st.spinner("AI is thinking..."):
         try:
-            # Clean direct string query format
             response = model.generate_content(str(final_query))
             reply = response.text
-            
             st.write(f"**AI:** {reply}")
             speak(reply)
         except Exception as e:
