@@ -4,9 +4,20 @@ from streamlit_mic_recorder import mic_recorder
 from gtts import gTTS
 import base64
 
-# 1. API Configuration
-GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", "YOUR_ACTUAL_API_KEY_HERE")
-genai.configure(api_key=GOOGLE_API_KEY)
+# --- API KEY MANAGEMENT ---
+# Sabse pehle secrets se key uthayenge
+GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", None)
+
+# Agar secrets me nahi mili, toh check karenge local environment variable ya direct check
+if not GOOGLE_API_KEY or GOOGLE_API_KEY == "YOUR_ACTUAL_API_KEY_HERE":
+    st.error("🚨 **Error:** Streamlit ko aapki Gemini API Key nahi mil rahi hai! Kripya niche diye gaye 'Step 2' ko dekhein.")
+    st.stop()  # Code ko aage badhne se rok dega taaki 400 error na aaye
+else:
+    # Agar key mil gayi toh configure karein
+    genai.configure(api_key=GOOGLE_API_KEY)
+
+# Stable model selection
+model = genai.GenerativeModel('gemini-1.5-flash')
 # Safe aur updated stable model use kar rahe hain
 model = genai.GenerativeModel('gemini-1.5-flash')
 
