@@ -11,7 +11,7 @@ GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY", None)
 # 2. FALLBACK: Agar secrets kaam nahi kar raha, toh apni ASLI KEY niche dandi (quotes) me paste kar do!
 # GitHub par push karne se pehle apni key yahan daal kar test karo.
 if not GOOGLE_API_KEY or GOOGLE_API_KEY == "YOUR_ACTUAL_API_KEY_HERE":
-    GOOGLE_API_KEY = "YAHAN_APNI_ASLI_GEMINI_KEY_PASTE_KARO" # <-- Apni AIzaSy... wali key yahan likhein
+    GOOGLE_API_KEY = " Apni AIzaSy... wali key yahan likhein" # <-- Apni AIzaSy... wali key yahan likhein
 
 # Final validation check
 if GOOGLE_API_KEY == "YAHAN_APNI_ASLI_GEMINI_KEY_PASTE_KARO" or not GOOGLE_API_KEY:
